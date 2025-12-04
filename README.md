@@ -1,101 +1,119 @@
 # Student Performance Prediction using Vertex AI AutoML
 
-This project trains and deploys a machine learning model using Google Cloud Vertex AI AutoML Tables. The goal is to predict a student’s final grade (G3) based on demographic and academic attributes from the Student Performance Dataset published by the UCI Machine Learning Repository.
+This lab walks through building, training, deploying, and testing an AutoML Tabular Regression model on Google Cloud Vertex AI. The goal is to predict a student’s final grade (G3) using the Student Performance dataset.
+
+All steps were completed using the Google Cloud console, and all screenshots are stored in the `assets/` folder.
 
 ---
 
-## Dataset
+## 1. Dataset Used
 
-Source: UCI Student Performance Dataset  
-Dataset link: https://archive.ics.uci.edu/static/public/320/student.zip
+For this lab I used the **Student Performance** dataset from UCI, which is available as:
 
-The experiment uses the `student-mat.csv` file, which includes:
+- `student-mat.csv` (Math course)
+- `student-por.csv` (Portuguese course)
 
-- demographic details  
-- family background  
-- study habits  
-- previous grades (G1 and G2)  
-- absences  
-- academic support indicators  
+The files contain **33 features** describing:
 
-The target variable is **G3**, which represents the final grade.  
-The dataset is already structured and clean, so no heavy preprocessing was required.
+- Student demographics  
+- Family background  
+- Study time, absences, lifestyle  
+- Parental education and job  
+- Past grades (G1, G2)  
+- School support programs  
 
----
+Each file has fewer than 1000 rows, and AutoML Tabular requires at least **1000 rows**.
 
-## Objective
+### ✔ To meet this requirement, I merged both datasets  
+This produced:
 
-The purpose of this lab is to complete a full training and deployment workflow using Google Cloud Vertex AI:
+- **student-merged.csv**
+- **1044 total rows**
+- **32 input features**
+- **Target feature:** `G3` (final grade)
 
-1. Import the tabular dataset  
-2. Train a regression model using AutoML  
-3. Deploy the model to a Vertex AI endpoint  
-4. Run online predictions on the deployed model  
-
-This demonstrates an end-to-end MLOps process using Vertex AI in a simple and practical way.
+This merged CSV was uploaded to a GCS bucket and imported into Vertex AI as a Tabular Dataset.
 
 ---
 
-## Steps
+## 2. Training the AutoML Model
 
-### 1. Upload the Dataset to Vertex AI
+I created a training pipeline in Vertex AI with:
 
-1. Open the Google Cloud Console and go to **Vertex AI**  
-2. Select **Datasets → Create Dataset → Tabular**  
-3. Upload `student-mat.csv`  
-4. Allow Vertex AI to automatically detect all column types  
-5. Set **G3** as the target column  
+- **Objective:** Regression  
+- **Target column:** `G3`  
+- **Optimization metric:** RMSE  
+- **Training budget:** 1 node hour  
+- **Data split:** 80/10/10 (auto)
 
-The default schema detection works without any issues.
+Training completed successfully.
 
----
-
-### 2. Train the AutoML Model
-
-1. Choose **AutoML** as the training method  
-2. Keep all column transformations on default  
-3. Set the training budget (1 node-hour is sufficient for this dataset)  
-4. Start the training job  
-
-Vertex AI automatically handles:
-
-- feature engineering  
-- data encoding  
-- model selection  
-- hyperparameter tuning  
-
-Training typically completes in 15 to 25 minutes.
+### Training Pipeline Screenshot  
+![Training Pipeline](assets/training_pipeline.png)
 
 ---
 
-### 3. Deploy the Model
+## 3. Deploying the Model
 
-1. Open the trained model in Vertex AI  
-2. Select **Deploy to Endpoint**  
-3. Create a new endpoint  
-4. Choose a basic machine type, such as `n1-standard-2`  
-5. Confirm deployment  
+After training, I deployed the model version to a new online endpoint with:
 
-The model becomes available for online predictions once deployment is complete.
+- **Machine type:** n1-standard-2  
+- **Min nodes:** 1  
+- **Traffic split:** 100 percent  
+- **Model monitoring:** Disabled (not required for this lab)
+
+The endpoint became active and ready for inference.
+
+### Endpoint Screenshot  
+![Endpoint](assets/endpoint.png)
 
 ---
 
-### 4. Test the Endpoint
+## 4. Testing the Model (Online Prediction)
 
-Predictions can be tested directly in the Vertex AI console using JSON input.  
-Example:
+Prediction was tested using the built-in **“Test your model”** panel in the Vertex AI console.  
+All 32 feature values were manually entered, and the deployed endpoint returned the prediction.
 
-```json
-{
-  "instances": [
-    {
-      "school": "GP",
-      "sex": "F",
-      "age": 17,
-      "studytime": 2,
-      "absences": 4,
-      "G1": 12,
-      "G2": 13
-    }
-  ]
-}
+### **Prediction Output:**
+
+- **Predicted label:** `G3`
+- **Prediction result:** `11.52`
+- **95 percent prediction interval:** `[2.47, 43.00]`
+
+### Prediction Screenshot  
+![Prediction](assets/prediction.png)
+
+---
+
+## 5. Understanding the Prediction
+
+The model predicted:
+
+### ⭐ Final Grade (G3) ≈ **11.5 out of 20**
+
+This is the expected final exam score based on:
+
+- Prior grades (G1, G2)  
+- Study time  
+- Absences  
+- Family support  
+- Internet access  
+- Other behavioral factors  
+
+The prediction interval is wide because the dataset contains many lifestyle and behavioral variables, which naturally increase variability.
+
+---
+
+## 6. Summary of Completed Steps
+
+✔ Merged two datasets into a single training file  
+✔ Uploaded dataset to GCS  
+✔ Created a Vertex AI Tabular dataset  
+✔ Trained a regression model using AutoML  
+✔ Deployed the model to an online endpoint  
+✔ Performed real-time prediction using the console  
+✔ Captured all screenshots for documentation  
+
+This completes **Lab 6** for Vertex AI AutoML.
+
+---
